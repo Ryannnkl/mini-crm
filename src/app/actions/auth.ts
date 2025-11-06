@@ -3,7 +3,10 @@
 import { LoginSchema, LoginSchemaType } from "@/lib/schemas/login.schema";
 import { cookies } from "next/headers";
 import { session as sessionTable } from "@/db/schema";
-import { SignupSchema, type SignupSchemaType } from "@/lib/schemas/signup.schema";
+import {
+  SignupSchema,
+  type SignupSchemaType,
+} from "@/lib/schemas/signup.schema";
 import { db } from "@/db";
 import { user as userTable, account as accountTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -65,13 +68,21 @@ export async function signIn(data: LoginSchemaType) {
   const { email, password } = validationResult.data;
 
   try {
-    const user = await db.select().from(userTable).where(eq(userTable.email, email)).limit(1);
+    const user = await db
+      .select()
+      .from(userTable)
+      .where(eq(userTable.email, email))
+      .limit(1);
 
     if (!user[0]) {
       return { error: "Invalid email or password.", status: 401 };
     }
 
-    const account = await db.select().from(accountTable).where(eq(accountTable.userId, user[0].id)).limit(1);
+    const account = await db
+      .select()
+      .from(accountTable)
+      .where(eq(accountTable.userId, user[0].id))
+      .limit(1);
 
     if (!account[0].password) {
       return { error: "Invalid email or password.", status: 401 };
@@ -83,7 +94,6 @@ export async function signIn(data: LoginSchemaType) {
       return { error: "Invalid email or password.", status: 401 };
     }
 
-    // Create session
     const sessionToken = uuidv4();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
@@ -94,7 +104,6 @@ export async function signIn(data: LoginSchemaType) {
       expiresAt: expiresAt,
     });
 
-    // Set cookie
     const cookieStore = await cookies();
     cookieStore.set("session_token", sessionToken, {
       httpOnly: true,
