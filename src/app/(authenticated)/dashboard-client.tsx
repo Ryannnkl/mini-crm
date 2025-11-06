@@ -100,7 +100,7 @@ export function DashboardClient({ companiesData }: DashboardClientProps) {
   }
 
   return (
-    <div className="flex flex-1 flex-col w-full p-4 space-y-4">
+    <div className="flex flex-1 flex-col w-full p-2 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <Button onClick={() => setIsCreateModalOpen(true)}>

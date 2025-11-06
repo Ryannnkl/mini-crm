@@ -15,7 +15,7 @@ export default async function Layout({
   return (
     <SidebarProvider>
       <AppSidebar user={user} />
-      <main className="w-full h-full">
+      <main className="w-full h-full p-4">
         <SidebarTrigger />
         <Suspense>{children}</Suspense>
       </main>

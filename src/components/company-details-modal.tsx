@@ -57,20 +57,38 @@ export function CompanyDetailsModal({
 
   useEffect(() => {
     if (isOpen && company) {
-      setIsLoading(true);
-      Promise.all([
-        getInteractions(company.id),
-        getUserData(),
-      ]).then(([interactionsResult, userData]) => {
-        if (interactionsResult.error) {
-          toast.error(interactionsResult.error);
-        } else if (interactionsResult.interactions) {
-          setInteractions(interactionsResult.interactions);
+      let isMounted = true;
+
+      const fetchData = async () => {
+        setIsLoading(true);
+        try {
+          const [interactionsResult, userData] = await Promise.all([
+            getInteractions(company.id),
+            getUserData(),
+          ]);
+
+          if (!isMounted) return;
+
+          if (interactionsResult.error) {
+            toast.error(interactionsResult.error);
+          } else if (interactionsResult.interactions) {
+            setInteractions(interactionsResult.interactions);
+          }
+          setUser(userData);
+        } catch (error) {
+          toast.error("Failed to load data");
+        } finally {
+          if (isMounted) {
+            setIsLoading(false);
+          }
         }
-        setUser(userData);
-      }).finally(() => {
-        setIsLoading(false);
-      });
+      };
+
+      fetchData();
+
+      return () => {
+        isMounted = false;
+      };
     }
   }, [isOpen, company]);
 
@@ -144,7 +162,10 @@ export function CompanyDetailsModal({
                   </div>
                 ) : interactions.length > 0 ? (
                   interactions.map((interaction) => (
-                    <div key={interaction.id} className="flex items-start gap-3">
+                    <div
+                      key={interaction.id}
+                      className="flex items-start gap-3"
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user?.image ?? undefined} />
                         <AvatarFallback>
@@ -153,14 +174,17 @@ export function CompanyDetailsModal({
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <p className="font-semibold">{user?.name ?? "User"}</p>{" "}
+                          <p className="font-semibold">
+                            {user?.name ?? "User"}
+                          </p>{" "}
                           <p>
-                            {new Date(
-                              interaction.createdAt
-                            ).toLocaleString([], {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })}
+                            {new Date(interaction.createdAt).toLocaleString(
+                              [],
+                              {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              }
+                            )}
                           </p>
                         </div>
                         <div className="mt-1 rounded-md bg-secondary p-3 text-sm">
