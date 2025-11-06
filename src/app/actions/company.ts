@@ -87,3 +87,42 @@ export async function updateCompanyStatus(
     return { error: "An unexpected error occurred." };
   }
 }
+
+export async function deleteCompany(companyId: number) {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session_token")?.value;
+
+    if (!sessionToken) {
+      return { error: "Unauthorized" };
+    }
+
+    const [session] = await db
+      .select({ userId: sessionTable.userId })
+      .from(sessionTable)
+      .where(eq(sessionTable.token, sessionToken));
+
+    if (!session) {
+      return { error: "Unauthorized" };
+    }
+
+    const [deletedCompany] = await db
+      .delete(companies)
+      .where(
+        and(eq(companies.id, companyId), eq(companies.userId, session.userId))
+      )
+      .returning({ id: companies.id });
+
+    if (!deletedCompany) {
+      return {
+        error: "Company not found or permission denied.",
+      };
+    }
+
+    revalidatePath("/");
+    return { success: "Company deleted successfully!" };
+  } catch (e) {
+    console.error("Delete company error:", e);
+    return { error: "An unexpected error occurred." };
+  }
+}

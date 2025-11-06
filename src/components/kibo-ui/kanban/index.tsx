@@ -89,6 +89,7 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
 export type KanbanCardProps<T extends KanbanItemProps = KanbanItemProps> = T & {
   children?: ReactNode;
   className?: string;
+  onClick?: () => void;
 };
 
 export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
@@ -96,6 +97,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   name,
   children,
   className,
+  onClick,
 }: KanbanCardProps<T>) => {
   const {
     attributes,
@@ -114,10 +116,14 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   };
 
   return (
-    <div style={style} {...listeners} {...attributes} ref={setNodeRef}>
+    <div style={style} ref={setNodeRef}>
       <Card
+        {...listeners}
+        {...attributes}
+        onClick={onClick}
         className={cn(
           "cursor-grab gap-4 rounded-md p-3 shadow-sm",
+          onClick && "cursor-pointer",
           isDragging && "opacity-30",
           className
         )}
@@ -197,8 +203,19 @@ export const KanbanProvider = <
   const [activeCard, setActiveCard] = useState<T | null>(null);
 
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, {
+      // Só ativa o arraste se o mouse se mover mais de 5px
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      // Pressione por 250ms ou mova mais de 5px para arrastar em mobile
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor)
   );
 
@@ -256,13 +273,12 @@ export const KanbanProvider = <
           {columns.map((column) => children(column))}
         </div>
         {typeof window !== "undefined" &&
+          activeCard &&
           createPortal(
             <DragOverlay>
-              {activeCard ? (
-                <KanbanCard {...activeCard}>
-                  <p className="m-0 font-medium text-sm">{activeCard.name}</p>
-                </KanbanCard>
-              ) : null}
+              <KanbanCard {...activeCard}>
+                <p className="m-0 font-medium text-sm">{activeCard.name}</p>
+              </KanbanCard>
             </DragOverlay>,
             document.body
           )}

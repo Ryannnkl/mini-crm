@@ -23,12 +23,14 @@ interface CompaniesKanbanClientProps {
   companiesList: CompanyKanbanItem[];
   handleDragOver: (event: DragEndEvent) => void;
   handleDragEnd: (event: DragEndEvent) => Promise<void>;
+  onCardClick: (company: CompanyKanbanItem) => void;
 }
 
 export function CompaniesKanbanClient({
   companiesList,
   handleDragOver,
   handleDragEnd,
+  onCardClick,
 }: CompaniesKanbanClientProps) {
   return (
     <KanbanProvider
@@ -58,6 +60,7 @@ export function CompaniesKanbanClient({
                 key={company.id}
                 name={company.name}
                 column={company.status}
+                onClick={() => onCardClick(company)}
               >
                 <p className="m-0 font-medium text-sm">{company.name}</p>
               </KanbanCard>

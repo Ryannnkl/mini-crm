@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { updateCompanyStatus } from "@/app/actions/company";
 import type { DragEndEvent } from "@/components/kibo-ui/kanban";
 import { arrayMove } from "@dnd-kit/sortable";
+import { CompanyDetailsModal } from "@/components/company-details-modal";
 
 type Company = typeof companies.$inferSelect;
 type CompanyKanbanItem = Company & { column: string };
@@ -19,7 +20,8 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ companiesData }: DashboardClientProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
   const [companiesList, setCompaniesList] = useState<CompanyKanbanItem[]>(() =>
     companiesData.map((c) => ({ ...c, column: c.status }))
@@ -28,6 +30,15 @@ export function DashboardClient({ companiesData }: DashboardClientProps) {
   function handleCompanyCreated(newCompany: Company) {
     const newKanbanItem = { ...newCompany, column: newCompany.status };
     setCompaniesList((prevData) => [newKanbanItem, ...prevData]);
+  }
+
+  function handleDeleteCompany(companyId: number) {
+    setCompaniesList((prev) => prev.filter((c) => c.id !== companyId));
+    setSelectedCompany(null); // Fecha o modal de detalhes
+  }
+
+  function handleCardClick(company: CompanyKanbanItem) {
+    setSelectedCompany(company);
   }
 
   function handleDragOver(event: DragEndEvent) {
@@ -92,12 +103,14 @@ export function DashboardClient({ companiesData }: DashboardClientProps) {
     <div className="flex flex-1 flex-col w-full p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Create Company</Button>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          Create Company
+        </Button>
       </div>
 
       <CreateCompanyModal
-        isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        isOpen={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
         onCompanyCreated={handleCompanyCreated}
       />
 
@@ -105,6 +118,16 @@ export function DashboardClient({ companiesData }: DashboardClientProps) {
         companiesList={companiesList}
         handleDragOver={handleDragOver}
         handleDragEnd={handleDragEnd}
+        onCardClick={handleCardClick}
+      />
+
+      <CompanyDetailsModal
+        isOpen={!!selectedCompany}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setSelectedCompany(null);
+        }}
+        company={selectedCompany}
+        onDelete={handleDeleteCompany}
       />
     </div>
   );
