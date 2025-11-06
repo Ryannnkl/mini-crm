@@ -10,8 +10,9 @@ import {
 import { NavUser } from "./nav-user";
 import { HomeIcon } from "lucide-react";
 import Link from "next/link";
+import type { User } from "@/type/user.type";
 
-export function AppSidebar() {
+export function AppSidebar({ user }: { user: User }) {
   const menuItems = [
     {
       title: "Dashboard",
@@ -38,7 +39,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );
