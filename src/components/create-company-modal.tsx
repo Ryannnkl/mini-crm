@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import type { companies } from "@/db/schema";
 
 import {
   CreateCompanySchema,
@@ -32,11 +33,13 @@ import {
 interface CreateCompanyModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onCompanyCreated: (newCompany: typeof companies.$inferSelect) => void;
 }
 
 export function CreateCompanyModal({
   isOpen,
   onOpenChange,
+  onCompanyCreated,
 }: CreateCompanyModalProps) {
   const form = useForm<CreateCompanySchemaType>({
     resolver: zodResolver(CreateCompanySchema),
@@ -50,10 +53,11 @@ export function CreateCompanyModal({
   async function onSubmit(values: CreateCompanySchemaType) {
     const result = await createCompany(values);
 
-    if (result.error) {
-      toast.error(result.error);
+    if (result.error || !result.company) {
+      toast.error(result.error || "An unexpected error occurred.");
     } else {
       toast.success(result.success);
+      onCompanyCreated(result.company);
       form.reset();
       onOpenChange(false);
     }

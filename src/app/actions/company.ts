@@ -7,7 +7,7 @@ import {
   type CreateCompanySchemaType,
 } from "@/lib/schemas/company.schema";
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function createCompany(data: CreateCompanySchemaType) {
@@ -36,15 +36,54 @@ export async function createCompany(data: CreateCompanySchemaType) {
       return { error: "Unauthorized: Invalid session." };
     }
 
-    await db.insert(companies).values({
-      name: name,
-      userId: session.userId,
-    });
+    const [newCompany] = await db
+      .insert(companies)
+      .values({
+        name: name,
+        userId: session.userId,
+      })
+      .returning();
 
     revalidatePath("/");
-    return { success: "Company created successfully!" };
+    return { success: "Company created successfully!", company: newCompany };
   } catch (e) {
     console.error("Create company error:", e);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function updateCompanyStatus(
+  companyId: number,
+  newStatus: "lead" | "negotiating" | "won" | "lost"
+) {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session_token")?.value;
+
+    if (!sessionToken) {
+      return { error: "Unauthorized" };
+    }
+
+    const [session] = await db
+      .select({ userId: sessionTable.userId })
+      .from(sessionTable)
+      .where(eq(sessionTable.token, sessionToken));
+
+    if (!session) {
+      return { error: "Unauthorized" };
+    }
+
+    await db
+      .update(companies)
+      .set({ status: newStatus })
+      .where(
+        and(eq(companies.id, companyId), eq(companies.userId, session.userId))
+      );
+
+    revalidatePath("/");
+    return { success: true };
+  } catch (e) {
+    console.error("Update company status error:", e);
     return { error: "An unexpected error occurred." };
   }
 }

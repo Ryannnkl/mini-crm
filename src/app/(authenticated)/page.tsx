@@ -1,23 +1,14 @@
-"use client";
+import { cookies } from "next/headers";
+import { getCompaniesForUser } from "@/lib/data";
+import { DashboardClient } from "./dashboard-client";
 
-import { ProgressKanban } from "@/components/progress-kanban";
-import { CreateCompanyModal } from "@/components/create-company-modal";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token")?.value;
 
-export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const companiesData = sessionToken
+    ? await getCompaniesForUser(sessionToken)
+    : [];
 
-  return (
-    <div className="flex flex-1 flex-col w-full p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Create Company</Button>
-      </div>
-
-      <CreateCompanyModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
-
-      <ProgressKanban />
-    </div>
-  );
+  return <DashboardClient companiesData={companiesData} />;
 }

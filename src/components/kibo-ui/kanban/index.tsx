@@ -26,19 +26,17 @@ import {
   type ReactNode,
   useContext,
   useState,
+  useMemo,
 } from "react";
 import { createPortal } from "react-dom";
-import tunnel from "tunnel-rat";
 import { Card } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-const t = tunnel();
-
 export type { DragEndEvent } from "@dnd-kit/core";
 
 type KanbanItemProps = {
-  id: string;
+  id: string | number;
   name: string;
   column: string;
 } & Record<string, unknown>;
@@ -54,13 +52,13 @@ type KanbanContextProps<
 > = {
   columns: C[];
   data: T[];
-  activeCardId: string | null;
+  activeCard: T | null;
 };
 
 const KanbanContext = createContext<KanbanContextProps>({
   columns: [],
   data: [],
-  activeCardId: null,
+  activeCard: null,
 });
 
 export type KanbanBoardProps = {
@@ -107,9 +105,8 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
     transform,
     isDragging,
   } = useSortable({
-    id,
+    id: String(id),
   });
-  const { activeCardId } = useContext(KanbanContext) as KanbanContextProps;
 
   const style = {
     transition,
@@ -117,32 +114,17 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   };
 
   return (
-    <>
-      <div style={style} {...listeners} {...attributes} ref={setNodeRef}>
-        <Card
-          className={cn(
-            "cursor-grab gap-4 rounded-md p-3 shadow-sm",
-            isDragging && "pointer-events-none cursor-grabbing opacity-30",
-            className
-          )}
-        >
-          {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
-        </Card>
-      </div>
-      {activeCardId === id && (
-        <t.In>
-          <Card
-            className={cn(
-              "cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-primary",
-              isDragging && "cursor-grabbing",
-              className
-            )}
-          >
-            {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
-          </Card>
-        </t.In>
-      )}
-    </>
+    <div style={style} {...listeners} {...attributes} ref={setNodeRef}>
+      <Card
+        className={cn(
+          "cursor-grab gap-4 rounded-md p-3 shadow-sm",
+          isDragging && "opacity-30",
+          className
+        )}
+      >
+        {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
+      </Card>
+    </div>
   );
 };
 
@@ -160,7 +142,9 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 }: KanbanCardsProps<T>) => {
   const { data } = useContext(KanbanContext) as KanbanContextProps<T>;
   const filteredData = data.filter((item) => item.column === id);
-  const items = filteredData.map((item) => item.id);
+  const items = useMemo(() => filteredData.map((item) => String(item.id)), [
+    filteredData,
+  ]);
 
   return (
     <ScrollArea className="overflow-hidden">
@@ -208,10 +192,9 @@ export const KanbanProvider = <
   className,
   columns,
   data,
-  onDataChange,
   ...props
-}: KanbanProviderProps<T, C>) => {
-  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+}: Omit<KanbanProviderProps<T, C>, "onDataChange">) => {
+  const [activeCard, setActiveCard] = useState<T | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -220,100 +203,46 @@ export const KanbanProvider = <
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const card = data.find((item) => item.id === event.active.id);
+    const card = data.find((item) => String(item.id) === event.active.id);
     if (card) {
-      setActiveCardId(event.active.id as string);
+      setActiveCard(card);
     }
     onDragStart?.(event);
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-
-    if (!over) {
-      return;
-    }
-
-    const activeItem = data.find((item) => item.id === active.id);
-    const overItem = data.find((item) => item.id === over.id);
-
-    if (!activeItem) {
-      return;
-    }
-
-    const activeColumn = activeItem.column;
-    const overColumn =
-      overItem?.column ||
-      columns.find((col) => col.id === over.id)?.id ||
-      columns[0]?.id;
-
-    if (activeColumn !== overColumn) {
-      let newData = [...data];
-      const activeIndex = newData.findIndex((item) => item.id === active.id);
-      const overIndex = newData.findIndex((item) => item.id === over.id);
-
-      newData[activeIndex].column = overColumn;
-      newData = arrayMove(newData, activeIndex, overIndex);
-
-      onDataChange?.(newData);
-    }
-
-    onDragOver?.(event);
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
-    setActiveCardId(null);
-
+    setActiveCard(null);
     onDragEnd?.(event);
-
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    let newData = [...data];
-
-    const oldIndex = newData.findIndex((item) => item.id === active.id);
-    const newIndex = newData.findIndex((item) => item.id === over.id);
-
-    newData = arrayMove(newData, oldIndex, newIndex);
-
-    onDataChange?.(newData);
   };
 
   const announcements: Announcements = {
     onDragStart({ active }) {
-      const { name, column } = data.find((item) => item.id === active.id) ?? {};
-
+      const { name, column } = data.find((item) => String(item.id) === active.id) ?? {};
       return `Picked up the card "${name}" from the "${column}" column`;
     },
     onDragOver({ active, over }) {
-      const { name } = data.find((item) => item.id === active.id) ?? {};
+      const { name } = data.find((item) => String(item.id) === active.id) ?? {};
       const newColumn = columns.find((column) => column.id === over?.id)?.name;
-
       return `Dragged the card "${name}" over the "${newColumn}" column`;
     },
     onDragEnd({ active, over }) {
-      const { name } = data.find((item) => item.id === active.id) ?? {};
+      const { name } = data.find((item) => String(item.id) === active.id) ?? {};
       const newColumn = columns.find((column) => column.id === over?.id)?.name;
-
       return `Dropped the card "${name}" into the "${newColumn}" column`;
     },
     onDragCancel({ active }) {
-      const { name } = data.find((item) => item.id === active.id) ?? {};
-
+      const { name } = data.find((item) => String(item.id) === active.id) ?? {};
       return `Cancelled dragging the card "${name}"`;
     },
   };
 
   return (
-    <KanbanContext.Provider value={{ columns, data, activeCardId }}>
+    <KanbanContext.Provider value={{ columns, data, activeCard }}>
       <DndContext
         accessibility={{ announcements }}
         collisionDetection={pointerWithin}
         onDragEnd={handleDragEnd}
-        onDragOver={handleDragOver}
+        onDragOver={onDragOver}
         onDragStart={handleDragStart}
         sensors={sensors}
         {...props}
@@ -329,7 +258,11 @@ export const KanbanProvider = <
         {typeof window !== "undefined" &&
           createPortal(
             <DragOverlay>
-              <t.Out />
+              {activeCard ? (
+                <KanbanCard {...activeCard}>
+                  <p className="m-0 font-medium text-sm">{activeCard.name}</p>
+                </KanbanCard>
+              ) : null}
             </DragOverlay>,
             document.body
           )}
@@ -337,3 +270,5 @@ export const KanbanProvider = <
     </KanbanContext.Provider>
   );
 };
+
+
