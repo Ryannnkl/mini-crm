@@ -29,13 +29,23 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-sm text-red-500 mt-1">{message}</p>;
 }
 
-function ServerResponse({ message, type }: { message?: string, type?: 'success' | 'error' }) {
+function ServerResponse({
+  message,
+  type,
+}: {
+  message?: string;
+  type?: "success" | "error";
+}) {
   if (!message) return null;
   const colors = {
     success: "text-green-500",
     error: "text-red-500",
   };
-  return <p className={`text-sm mt-2 text-center ${type ? colors[type] : ''}`}>{message}</p>;
+  return (
+    <p className={`text-sm mt-2 text-center ${type ? colors[type] : ""}`}>
+      {message}
+    </p>
+  );
 }
 
 export function LoginForm({
@@ -43,7 +53,10 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const [serverResponse, setServerResponse] = useState<{ message?: string; type?: 'success' | 'error' }>({});
+  const [serverResponse, setServerResponse] = useState<{
+    message?: string;
+    type?: "success" | "error";
+  }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -60,13 +73,16 @@ export function LoginForm({
     try {
       const response = await signIn(data);
       if (response.error) {
-        setServerResponse({ message: response.error, type: 'error' });
+        setServerResponse({ message: response.error, type: "error" });
       } else {
-        setServerResponse({ message: response.success, type: 'success' });
-        router.push("/"); // Redirect to home on successful login
+        setServerResponse({ message: response.success, type: "success" });
+        router.push("/");
       }
     } catch (error) {
-      setServerResponse({ message: "An unexpected error occurred.", type: 'error' });
+      setServerResponse({
+        message: "An unexpected error occurred.",
+        type: "error",
+      });
     }
     setIsSubmitting(false);
   };
@@ -96,12 +112,6 @@ export function LoginForm({
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
                 </div>
                 <Input
                   id="password"
@@ -114,7 +124,10 @@ export function LoginForm({
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Logging In..." : "Login"}
                 </Button>
-                <ServerResponse message={serverResponse.message} type={serverResponse.type} />
+                <ServerResponse
+                  message={serverResponse.message}
+                  type={serverResponse.type}
+                />
                 <FieldDescription className="text-center">
                   Don&apos;t have an account?{" "}
                   <Link href="/sign-up">Sign up</Link>

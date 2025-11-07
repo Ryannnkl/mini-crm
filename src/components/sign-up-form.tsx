@@ -23,20 +23,33 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-sm text-red-500 mt-1">{message}</p>;
 }
 
-function ServerResponse({ message, type }: { message?: string, type?: 'success' | 'error' }) {
+function ServerResponse({
+  message,
+  type,
+}: {
+  message?: string;
+  type?: "success" | "error";
+}) {
   if (!message) return null;
   const colors = {
     success: "text-green-500",
     error: "text-red-500",
   };
-  return <p className={`text-sm mt-2 text-center ${type ? colors[type] : ''}`}>{message}</p>;
+  return (
+    <p className={`text-sm mt-2 text-center ${type ? colors[type] : ""}`}>
+      {message}
+    </p>
+  );
 }
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [serverResponse, setServerResponse] = useState<{ message?: string; type?: 'success' | 'error' }>({});
+  const [serverResponse, setServerResponse] = useState<{
+    message?: string;
+    type?: "success" | "error";
+  }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -53,14 +66,15 @@ export function SignUpForm({
     try {
       const response = await signUp(data);
       if (response.error) {
-        setServerResponse({ message: response.error, type: 'error' });
+        setServerResponse({ message: response.error, type: "error" });
       } else {
-        setServerResponse({ message: response.success, type: 'success' });
-        // Optionally, you can reset the form or redirect the user
-        // reset();
+        setServerResponse({ message: response.success, type: "success" });
       }
     } catch (error) {
-      setServerResponse({ message: "An unexpected error occurred.", type: 'error' });
+      setServerResponse({
+        message: "An unexpected error occurred.",
+        type: "error",
+      });
     }
     setIsSubmitting(false);
   };
@@ -120,7 +134,10 @@ export function SignUpForm({
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Signing Up..." : "Sign Up"}
               </Button>
-              <ServerResponse message={serverResponse.message} type={serverResponse.type} />
+              <ServerResponse
+                message={serverResponse.message}
+                type={serverResponse.type}
+              />
               <span className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link href="/login" className="underline">
@@ -134,4 +151,3 @@ export function SignUpForm({
     </div>
   );
 }
-
