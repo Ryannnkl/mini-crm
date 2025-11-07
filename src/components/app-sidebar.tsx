@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavUser } from "./nav-user";
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import type { User } from "@/type/user.type";
 
@@ -18,6 +18,11 @@ export function AppSidebar({ user }: { user: User }) {
       title: "Dashboard",
       href: "/",
       icon: <HomeIcon />,
+    },
+    {
+      title: "Account",
+      href: "/account",
+      icon: <UserIcon />,
     },
   ];
 

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/type/user.type";
+import { ThemeSwitcher } from "./theme-switcher";
 
 function NavUserSkeleton() {
   return (
@@ -85,12 +86,7 @@ export function NavUser({ user }: { user: User }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link href="/account">
-                  <UserIcon className="mr-2" />
-                  Account
-                </Link>
-              </DropdownMenuItem>
+              <ThemeSwitcher />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
