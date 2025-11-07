@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { companies, interactions as interactionsTable } from "@/db/schema";
+import { MoreVertical, Send } from "lucide-react";
 
-import { deleteCompany } from "@/app/actions/company";
+import { deleteCompany, updateCompanyStatus } from "@/app/actions/company";
 import { createInteraction, getInteractions } from "@/app/actions/interaction";
 import { getUserData } from "@/app/actions/user";
 
@@ -30,6 +32,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import type { CompanyStatus } from "@/type/company.type";
+
+const columns = [
+  { id: "lead", name: "Lead" },
+  { id: "negotiating", name: "Negotiating" },
+  { id: "won", name: "Won" },
+  { id: "lost", name: "Lost" },
+];
 
 type Company = typeof companies.$inferSelect;
 type Interaction = typeof interactionsTable.$inferSelect;
@@ -40,6 +64,7 @@ interface CompanyDetailsModalProps {
   onOpenChange: (isOpen: boolean) => void;
   company: Company | null;
   onDelete: (companyId: number) => void;
+  onStatusChange: (companyId: number, newStatus: CompanyStatus) => void;
 }
 
 export function CompanyDetailsModal({
@@ -47,12 +72,15 @@ export function CompanyDetailsModal({
   onOpenChange,
   company,
   onDelete,
+  onStatusChange,
 }: CompanyDetailsModalProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newInteractionContent, setNewInteractionContent] = useState("");
+  const [newInteractionContent, setNewInteractionContent] =
+    useState<CompanyStatus>("lead");
   const [user, setUser] = useState<User>(null);
 
   useEffect(() => {
@@ -115,9 +143,24 @@ export function CompanyDetailsModal({
     } else if (result.interaction) {
       toast.success(result.success);
       setInteractions((prev) => [result.interaction!, ...prev]);
-      setNewInteractionContent("");
+      setNewInteractionContent("lead");
     }
     setIsPending(false);
+  }
+
+  async function handleStatusChange(newStatus: CompanyStatus) {
+    if (!company || newStatus === company.status) return;
+
+    setIsUpdatingStatus(true);
+    const result = await updateCompanyStatus(company.id, newStatus);
+    setIsUpdatingStatus(false);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(result.success);
+      onStatusChange(company.id, newStatus);
+    }
   }
 
   if (!company) {
@@ -127,91 +170,110 @@ export function CompanyDetailsModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-2xl grid-rows-[auto_auto_1fr_auto] flex flex-col h-[90vh] max-h-[700px] items-stretch justify-between"
+        >
           <DialogHeader>
-            <DialogTitle>{company.name}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{company.name}</DialogTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="flex-shrink-0">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-red-500 focus:text-red-500 focus:bg-red-50"
+                    onClick={() => setIsAlertOpen(true)}
+                  >
+                    Delete Company
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </DialogHeader>
 
-          <div className="-mx-6 -my-2 h-[1px] bg-border" />
+          <div className="flex w-full items-end justify-end">
+            <Select
+              defaultValue={company.status}
+              onValueChange={handleStatusChange}
+              disabled={isUpdatingStatus}
+            >
+              <SelectTrigger className="self-end">
+                <SelectValue placeholder="Change status..." />
+              </SelectTrigger>
+              <SelectContent>
+                {columns.map((col) => (
+                  <SelectItem key={col.id} value={col.id}>
+                    {col.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <div className="flex flex-col space-y-4 py-4">
-            <h3 className="font-semibold">Interactions</h3>
+          <ScrollArea className="pr-4 -mx-6 px-6 h-full">
+            <div className="space-y-6 py-4">
+              {isLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : interactions.length > 0 ? (
+                interactions.map((interaction) => (
+                  <div key={interaction.id} className="flex items-start gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.image ?? undefined} />
+                      <AvatarFallback>
+                        {user?.name?.charAt(0) ?? "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <p className="font-semibold">{user?.name ?? "User"}</p>{" "}
+                        <p>
+                          {new Date(interaction.createdAt).toLocaleString([], {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      </div>
+                      <div className="mt-1 rounded-md bg-secondary p-3 text-sm">
+                        <p>{interaction.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No interactions yet.
+                </p>
+              )}
+            </div>
+          </ScrollArea>
 
-            <div className="flex flex-col gap-2">
+          <DialogFooter className="pt-4">
+            <div className="flex w-full items-start gap-2">
               <Textarea
                 placeholder="Add a new interaction..."
                 value={newInteractionContent}
-                onChange={(e) => setNewInteractionContent(e.target.value)}
+                onChange={(e) =>
+                  setNewInteractionContent(e.target.value as CompanyStatus)
+                }
                 disabled={isPending}
+                className="min-h-12 max-h-24"
               />
               <Button
+                type="button"
                 onClick={handleAddInteraction}
                 disabled={isPending || !newInteractionContent.trim()}
-                className="self-end"
+                className="flex-shrink-0 h-full"
               >
-                {isPending ? "Saving..." : "Save"}
+                {isPending ? <Spinner /> : <Send className="h-5 w-5" />}
               </Button>
             </div>
-
-            <ScrollArea className="h-64 pr-4">
-              <div className="space-y-6">
-                {isLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ) : interactions.length > 0 ? (
-                  interactions.map((interaction) => (
-                    <div
-                      key={interaction.id}
-                      className="flex items-start gap-3"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.image ?? undefined} />
-                        <AvatarFallback>
-                          {user?.name?.charAt(0) ?? "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <p className="font-semibold">
-                            {user?.name ?? "User"}
-                          </p>{" "}
-                          <p>
-                            {new Date(interaction.createdAt).toLocaleString(
-                              [],
-                              {
-                                dateStyle: "short",
-                                timeStyle: "short",
-                              }
-                            )}
-                          </p>
-                        </div>
-                        <div className="mt-1 rounded-md bg-secondary p-3 text-sm">
-                          <p>{interaction.content}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-sm text-muted-foreground py-8">
-                    No interactions yet.
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-
-          <div className="-mx-6 -my-2 h-[1px] bg-border" />
-
-          <DialogFooter className="pt-4">
-            <Button
-              variant="destructive"
-              onClick={() => setIsAlertOpen(true)}
-              disabled={isPending}
-            >
-              Delete Company
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

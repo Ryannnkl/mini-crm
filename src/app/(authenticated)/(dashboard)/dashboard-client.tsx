@@ -34,7 +34,17 @@ export function DashboardClient({ companiesData }: DashboardClientProps) {
 
   function handleDeleteCompany(companyId: number) {
     setCompaniesList((prev) => prev.filter((c) => c.id !== companyId));
-    setSelectedCompany(null); // Fecha o modal de detalhes
+    setSelectedCompany(null);
+  }
+
+  function handleStatusChange(companyId: number, newStatus: Company['status']) {
+    setCompaniesList((prev) =>
+      prev.map((company) =>
+        company.id === companyId
+          ? { ...company, status: newStatus, column: newStatus }
+          : company
+      )
+    );
   }
 
   function handleCardClick(company: CompanyKanbanItem) {
@@ -128,6 +138,7 @@ export function DashboardClient({ companiesData }: DashboardClientProps) {
         }}
         company={selectedCompany}
         onDelete={handleDeleteCompany}
+        onStatusChange={handleStatusChange}
       />
     </div>
   );

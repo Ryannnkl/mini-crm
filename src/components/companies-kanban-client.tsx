@@ -38,9 +38,14 @@ export function CompaniesKanbanClient({
       data={companiesList}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      className="flex gap-4 overflow-x-auto pb-4 flex-nowrap md:grid md:grid-cols-4 md:overflow-x-visible"
     >
       {(column) => (
-        <KanbanBoard id={column.id} key={column.id}>
+        <KanbanBoard
+          id={column.id}
+          key={column.id}
+          className="w-[90vw] flex-shrink-0 md:w-auto"
+        >
           <KanbanHeader>
             <div className="flex items-center gap-2">
               <div
