@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { companies, interactions as interactionsTable } from "@/db/schema";
-import { MoreVertical, Send } from "lucide-react";
+import { MoreVertical, Send, TagIcon } from "lucide-react";
 
 import { deleteCompany, updateCompanyStatus } from "@/app/actions/company";
 import { createInteraction, getInteractions } from "@/app/actions/interaction";
@@ -47,13 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import type { CompanyStatus } from "@/type/company.type";
-
-const columns = [
-  { id: "lead", name: "Lead" },
-  { id: "negotiating", name: "Negotiating" },
-  { id: "won", name: "Won" },
-  { id: "lost", name: "Lost" },
-];
+import { columns } from "./companies-kanban-client";
 
 type Company = typeof companies.$inferSelect;
 type Interaction = typeof interactionsTable.$inferSelect;
@@ -170,32 +163,14 @@ export function CompanyDetailsModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent
-          showCloseButton={false}
-          className="max-w-2xl grid-rows-[auto_auto_1fr_auto] flex flex-col h-[90vh] max-h-[700px] items-stretch justify-between"
-        >
+        <DialogContent className="max-w-2xl grid-rows-[auto_auto_1fr_auto] flex flex-col h-[90vh] max-h-[700px] items-stretch justify-between">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>{company.name}</DialogTitle>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="flex-shrink-0">
-                    <MoreVertical className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-red-500 focus:text-red-500 focus:bg-red-50"
-                    onClick={() => setIsAlertOpen(true)}
-                  >
-                    Delete Company
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </DialogHeader>
 
-          <div className="flex w-full items-end justify-end">
+          <div className="flex w-full items-end justify-end gap-2">
             <Select
               defaultValue={company.status}
               onValueChange={handleStatusChange}
@@ -207,11 +182,27 @@ export function CompanyDetailsModal({
               <SelectContent>
                 {columns.map((col) => (
                   <SelectItem key={col.id} value={col.id}>
+                    <TagIcon className={"h-5 w-5"} color={col.color} />
                     {col.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-red-500 focus:text-red-500 focus:bg-red-50"
+                  onClick={() => setIsAlertOpen(true)}
+                >
+                  Delete Company
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <ScrollArea className="pr-4 -mx-6 px-6 h-full">

@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
 } from "@/components/kibo-ui/kanban";
 
-const columns = [
+export const columns = [
   { id: "lead", name: "Lead", color: "#848484" },
   { id: "negotiating", name: "Negotiating", color: "#f59e0b" },
   { id: "won", name: "Won", color: "#10b981" },
