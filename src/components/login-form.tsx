@@ -28,7 +28,11 @@ import Image from "next/image";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="text-sm text-red-500 mt-1">{message}</p>;
+  return (
+    <p className="text-sm text-red-500 mt-1" data-testid="field-error">
+      {message}
+    </p>
+  );
 }
 
 export function LoginForm({
@@ -92,6 +96,7 @@ export function LoginForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
+                  data-testid="email-input"
                   {...register("email")}
                 />
                 <FieldError message={errors.email?.message} />
@@ -103,12 +108,17 @@ export function LoginForm({
                 <Input
                   id="password"
                   type="password"
+                  data-testid="password-input"
                   {...register("password")}
                 />
                 <FieldError message={errors.password?.message} />
               </Field>
               <Field>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  data-testid="login-button"
+                >
                   {isSubmitting ? <Spinner /> : "Login"}
                 </Button>
                 <FieldDescription className="text-center">
@@ -133,6 +143,7 @@ export function LoginForm({
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2"
             onClick={handleGoogleSignIn}
+            data-testid="google-login-button"
           >
             {isSubmitting ? <Spinner /> : ""}
             <Image
