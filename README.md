@@ -15,6 +15,8 @@ Uma aplicação completa de Gerenciamento de Relacionamento com o Cliente (CRM) 
 - **Estilização:** ShadcnUI + Tailwind CSS
 - **ORM de Banco de Dados:** Drizzle ORM
 - **Autenticação:** Better-Auth
+- **Testes:** Playwright + Vitest
+- **Gerenciamento de Estado:** TanStack Query
 - **Gerenciador de Pacotes:** pnpm
 
 ## Como Começar
@@ -71,9 +73,45 @@ pnpm dev
 
 Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver o resultado.
 
+## Testes
+
+Este projeto inclui testes de ponta a ponta (E2E) com Playwright e testes de unidade com Vitest.
+
+### Testes de Ponta a Ponta (E2E)
+
+- **Executar todos os testes E2E:**
+  ```bash
+  pnpm test
+  ```
+- **Executar testes E2E com UI:**
+  ```bash
+  pnpm test:ui
+  ```
+- **Executar testes E2E com navegador visível:**
+  ```bash
+  pnpm test:headed
+  ```
+
+### Testes de Unidade
+
+- **Executar todos os testes de unidade:**
+  ```bash
+  pnpm test:unit
+  ```
+- **Executar testes de unidade em modo de observação (watch mode):**
+  ```bash
+  pnpm test:unit:watch
+  ```
+- **Executar testes de unidade com cobertura de código:**
+
+  ```bash
+  pnpm test:unit:coverage
+
+  ```
+
 ## Screenshots
 
-| Login                            | Dashboard                            | Detalhes da Empresa                            |
+| Visão Geral                      | Gerenciamento de Empresas            | Detalhes da Empresa                            |
 | -------------------------------- | ------------------------------------ | ---------------------------------------------- |
 | ![Login](screenshots/image1.png) | ![Dashboard](screenshots/image2.png) | ![Detalhes da Empresa](screenshots/image3.png) |
 
@@ -84,3 +122,6 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver o 
 - [Documentação do Better-Auth](https://www.better-auth.com/)
 - [Documentação do ShadcnUI](https://ui.shadcn.com/)
 - [Documentação do Tailwind CSS](https://tailwindcss.com/)
+- [Documentação do TanStack Query](https://tanstack.com/query/latest)
+- [Documentação do Playwright](https://playwright.dev/)
+- [Documentação do Vitest](https://vitest.dev/)
