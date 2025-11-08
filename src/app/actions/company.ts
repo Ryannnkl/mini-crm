@@ -87,19 +87,13 @@ export async function updateCompany(
   companyId: number,
   data: CompanyFormValues
 ) {
-  const validationResult = CompanyFormSchema.safeParse(data);
-
-  if (!validationResult.success) {
-    return { error: "Invalid data provided." };
-  }
-
   try {
     const user = await getUserData();
     if (!user) {
       return { error: "Unauthorized" };
     }
 
-    const { potentialValue, ...rest } = validationResult.data;
+    const { potentialValue, ...rest } = data;
 
     const [updatedCompany] = await db
       .update(companies)

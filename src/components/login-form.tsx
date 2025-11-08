@@ -55,15 +55,23 @@ export function LoginForm({
         rememberMe: true,
       });
     } catch (error) {
+      console.error(error);
       toast.error("An unexpected error occurred.");
       setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-    });
+    setIsSubmitting(true);
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("An unexpected error occurred.");
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,9 +130,11 @@ export function LoginForm({
           </div>
           <Button
             variant="outline"
+            disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2"
             onClick={handleGoogleSignIn}
           >
+            {isSubmitting ? <Spinner /> : ""}
             <Image
               src="/google.svg"
               alt="Google"
