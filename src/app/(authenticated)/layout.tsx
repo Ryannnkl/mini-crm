@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Suspense } from "react";
 import { getUserData } from "@/app/actions/user";
+import { QueryProvider } from "@/providers/query-provider";
 
 export default async function Layout({
   children,
@@ -11,12 +12,14 @@ export default async function Layout({
   const user = await getUserData();
 
   return (
-    <SidebarProvider>
-      <AppSidebar user={user} />
-      <main className="w-full h-full p-4">
-        <SidebarTrigger />
-        <Suspense>{children}</Suspense>
-      </main>
-    </SidebarProvider>
+    <QueryProvider>
+      <SidebarProvider>
+        <AppSidebar user={user} />
+        <main className="w-full h-full p-4">
+          <SidebarTrigger />
+          <Suspense>{children}</Suspense>
+        </main>
+      </SidebarProvider>
+    </QueryProvider>
   );
 }

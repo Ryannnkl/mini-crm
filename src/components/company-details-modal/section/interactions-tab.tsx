@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Send } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { interactions, companies } from "@/db/schema";
-import type { User } from "better-auth";
 import { createInteraction, getInteractions } from "@/app/actions/interaction";
 import { toast } from "sonner";
 import { getUserData } from "@/app/actions/user";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-type Interaction = typeof interactions.$inferSelect;
 type Company = typeof companies.$inferSelect;
 
 interface InteractionsTabProps {
@@ -21,49 +20,37 @@ interface InteractionsTabProps {
 }
 
 export function InteractionsTab({ company }: InteractionsTabProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [newInteractionContent, setNewInteractionContent] =
     useState<string>("");
-  const [user, setUser] = useState<User>();
 
-  useEffect(() => {
-    if (company) {
-      let isMounted = true;
+  const { data: user } = useQuery({
+    queryKey: ["user"],
+    queryFn: getUserData,
+  });
 
-      const fetchData = async () => {
-        setIsLoading(true);
-        try {
-          const [interactionsResult, userData] = await Promise.all([
-            getInteractions(company.id),
-            getUserData(),
-          ]);
+  const {
+    data: interactions,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["interactions", company?.id],
+    queryFn: async () => {
+      if (!company) return [];
+      const res = await getInteractions(company.id);
+      if (res.error) {
+        throw new Error(res.error);
+      }
+      return res.interactions;
+    },
+    enabled: !!company,
+  });
 
-          if (!isMounted) return;
-
-          if (interactionsResult.error) {
-            toast.error(interactionsResult.error);
-          } else if (interactionsResult.interactions) {
-            setInteractions(interactionsResult.interactions);
-          }
-          setUser(userData);
-        } catch (error) {
-          toast.error("Failed to load data");
-        } finally {
-          if (isMounted) {
-            setIsLoading(false);
-          }
-        }
-      };
-
-      fetchData();
-
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [company]);
+  if (isError) {
+    toast.error(error.message);
+  }
 
   const handleAddInteraction = async () => {
     if (!company || !newInteractionContent.trim()) return;
@@ -73,8 +60,10 @@ export function InteractionsTab({ company }: InteractionsTabProps) {
       toast.error(result.error);
     } else if (result.interaction) {
       toast.success(result.success);
-      setInteractions((prev) => [result.interaction!, ...prev]);
       setNewInteractionContent("");
+      queryClient.invalidateQueries({
+        queryKey: ["interactions", company.id],
+      });
     }
     setIsPending(false);
   };
@@ -88,7 +77,7 @@ export function InteractionsTab({ company }: InteractionsTabProps) {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
-          ) : interactions.length > 0 ? (
+          ) : interactions && interactions.length > 0 ? (
             interactions.map((interaction) => (
               <div key={interaction.id} className="flex items-start gap-3">
                 <Avatar className="h-8 w-8">
