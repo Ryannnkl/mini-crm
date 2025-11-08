@@ -10,7 +10,7 @@ import {
 import { NavUser } from "./nav-user";
 import { HomeIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
-import type { User } from "@/type/user.type";
+import type { User } from "better-auth";
 
 export function AppSidebar({ user }: { user: User }) {
   const menuItems = [

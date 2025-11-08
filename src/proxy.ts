@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
-import { db } from "@/db";
-import { session as sessionTable } from "@/db/schema";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const LOGIN_URL = "/login";
 const SIGNUP_URL = "/sign-up";
@@ -12,29 +10,12 @@ const AUTH_ROUTES = [LOGIN_URL, SIGNUP_URL];
 
 export async function proxy(request: NextRequest) {
   const { nextUrl } = request;
-  const coockieStore = await cookies();
-  const sessionToken = coockieStore.get("session_token")?.value;
 
-  console.log("Session Token");
-  console.log(sessionToken);
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  let isAuthenticated = false;
-  if (sessionToken) {
-    try {
-      const [session] = await db
-        .select()
-        .from(sessionTable)
-        .where(eq(sessionTable.token, sessionToken))
-        .limit(1);
-
-      if (session && session.expiresAt > new Date()) {
-        isAuthenticated = true;
-      }
-    } catch (e) {
-      console.error("Middleware database error:", e);
-      isAuthenticated = false;
-    }
-  }
+  const isAuthenticated = !!session;
 
   const isAuthRoute = AUTH_ROUTES.includes(nextUrl.pathname);
 

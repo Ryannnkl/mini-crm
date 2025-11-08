@@ -1,7 +1,7 @@
 "use client";
 
-import { ChevronsUpDownIcon, LogOutIcon, UserIcon } from "lucide-react";
-import Link from "next/link";
+import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
+import type { User } from "better-auth";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,8 +20,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User } from "@/type/user.type";
 import { ThemeSwitcher } from "./theme-switcher";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 function NavUserSkeleton() {
   return (
@@ -37,10 +38,21 @@ function NavUserSkeleton() {
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
+  const router = useRouter();
 
   if (!user) {
     return <NavUserSkeleton />;
   }
+
+  const handleLogout = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login");
+        },
+      },
+    });
+  };
 
   return (
     <SidebarMenu>
@@ -89,7 +101,7 @@ export function NavUser({ user }: { user: User }) {
               <ThemeSwitcher />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>

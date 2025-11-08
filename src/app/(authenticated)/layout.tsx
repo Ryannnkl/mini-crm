@@ -3,8 +3,6 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Suspense } from "react";
 import { getUserData } from "@/app/actions/user";
 
-export const dynamic = "force-dynamic";
-
 export default async function Layout({
   children,
 }: {

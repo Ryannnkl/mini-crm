@@ -4,9 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { updateUserProfile } from "@/app/actions/account";
-import { getUserData } from "@/app/actions/user";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +13,10 @@ import {
   DropzoneEmptyState,
 } from "@/components/kibo-ui/dropzone";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-type User = Awaited<ReturnType<typeof getUserData>>;
+import { Spinner } from "@/components/ui/spinner";
+import type { User } from "better-auth";
+import { uploadFile } from "@/app/actions/files";
+import { authClient } from "@/lib/auth-client";
 
 export function AccountForm({ user }: { user: User }) {
   const router = useRouter();
@@ -35,12 +34,18 @@ export function AccountForm({ user }: { user: User }) {
       formData.append("image", imageFile[0]);
     }
 
-    const result = await updateUserProfile(formData);
+    const image = imageFile
+      ? await uploadFile(imageFile[0], user.id)
+      : undefined;
+    const result = await authClient.updateUser({
+      name,
+      image,
+    });
 
     if (result.error) {
-      toast.error(result.error);
+      toast.error(result.error.message);
     } else {
-      toast.success(result.success);
+      toast.success("User updated successfully!");
       router.refresh();
     }
     setIsPending(false);
@@ -83,7 +88,7 @@ export function AccountForm({ user }: { user: User }) {
       </div>
 
       <Button type="submit" disabled={isPending}>
-        {isPending ? "Saving..." : "Save Changes"}
+        {isPending ? <Spinner /> : "Save Changes"}
       </Button>
     </form>
   );

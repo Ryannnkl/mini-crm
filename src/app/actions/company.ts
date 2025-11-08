@@ -1,14 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { companies, session as sessionTable } from "@/db/schema";
+import { companies } from "@/db/schema";
 import {
   CreateCompanySchema,
   type CreateCompanySchemaType,
 } from "@/lib/schemas/company.schema";
-import { cookies } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getUserData } from "./user";
 
 export async function createCompany(data: CreateCompanySchemaType) {
   const validationResult = CreateCompanySchema.safeParse(data);
@@ -20,27 +20,16 @@ export async function createCompany(data: CreateCompanySchemaType) {
   const { name } = validationResult.data;
 
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session_token")?.value;
-
-    if (!sessionToken) {
-      return { error: "Unauthorized: No session token." };
-    }
-
-    const [session] = await db
-      .select({ userId: sessionTable.userId })
-      .from(sessionTable)
-      .where(eq(sessionTable.token, sessionToken));
-
-    if (!session) {
-      return { error: "Unauthorized: Invalid session." };
+    const user = await getUserData();
+    if (!user) {
+      return { error: "Unauthorized" };
     }
 
     const [newCompany] = await db
       .insert(companies)
       .values({
         name: name,
-        userId: session.userId,
+        userId: user.id,
       })
       .returning();
 
@@ -57,28 +46,14 @@ export async function updateCompanyStatus(
   newStatus: "lead" | "negotiating" | "won" | "lost"
 ) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session_token")?.value;
-
-    if (!sessionToken) {
+    const user = await getUserData();
+    if (!user) {
       return { error: "Unauthorized" };
     }
-
-    const [session] = await db
-      .select({ userId: sessionTable.userId })
-      .from(sessionTable)
-      .where(eq(sessionTable.token, sessionToken));
-
-    if (!session) {
-      return { error: "Unauthorized" };
-    }
-
     await db
       .update(companies)
       .set({ status: newStatus })
-      .where(
-        and(eq(companies.id, companyId), eq(companies.userId, session.userId))
-      );
+      .where(and(eq(companies.id, companyId), eq(companies.userId, user.id)));
 
     revalidatePath("/");
     return { success: true };
@@ -90,33 +65,19 @@ export async function updateCompanyStatus(
 
 export async function deleteCompany(companyId: number) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session_token")?.value;
+    const user = await getUserData();
 
-    if (!sessionToken) {
-      return { error: "Unauthorized" };
-    }
-
-    const [session] = await db
-      .select({ userId: sessionTable.userId })
-      .from(sessionTable)
-      .where(eq(sessionTable.token, sessionToken));
-
-    if (!session) {
+    if (!user) {
       return { error: "Unauthorized" };
     }
 
     const [deletedCompany] = await db
       .delete(companies)
-      .where(
-        and(eq(companies.id, companyId), eq(companies.userId, session.userId))
-      )
+      .where(and(eq(companies.id, companyId), eq(companies.userId, user.id)))
       .returning({ id: companies.id });
 
     if (!deletedCompany) {
-      return {
-        error: "Company not found or permission denied.",
-      };
+      return { error: "Company not found or permission denied." };
     }
 
     revalidatePath("/");

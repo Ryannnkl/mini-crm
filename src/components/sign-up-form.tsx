@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { SignupSchema, SignupSchemaType } from "@/lib/schemas/signup.schema";
-import { signUp } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,42 +15,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <p className="text-sm text-red-500 mt-1">{message}</p>;
-}
-
-function ServerResponse({
-  message,
-  type,
-}: {
-  message?: string;
-  type?: "success" | "error";
-}) {
-  if (!message) return null;
-  const colors = {
-    success: "text-green-500",
-    error: "text-red-500",
-  };
-  return (
-    <p className={`text-sm mt-2 text-center ${type ? colors[type] : ""}`}>
-      {message}
-    </p>
-  );
-}
+import { Spinner } from "@/components/ui/spinner";
+import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [serverResponse, setServerResponse] = useState<{
-    message?: string;
-    type?: "success" | "error";
-  }>({});
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -62,21 +44,30 @@ export function SignUpForm({
 
   const onSubmit = async (data: SignupSchemaType) => {
     setIsSubmitting(true);
-    setServerResponse({});
     try {
-      const response = await signUp(data);
-      if (response.error) {
-        setServerResponse({ message: response.error, type: "error" });
-      } else {
-        setServerResponse({ message: response.success, type: "success" });
-      }
-    } catch (error) {
-      setServerResponse({
-        message: "An unexpected error occurred.",
-        type: "error",
+      const { error } = await authClient.signUp.email({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        callbackURL: "/",
       });
+      if (error) {
+        toast.error(error.message);
+        setIsSubmitting(false);
+        return;
+      }
+      router.push("/");
+    } catch (error) {
+      console.error(error);
+      toast.error("An unexpected error occurred.");
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+    });
   };
 
   return (
@@ -99,7 +90,7 @@ export function SignUpForm({
                   placeholder="John Doe"
                   {...register("name")}
                 />
-                <FieldError message={errors.name?.message} />
+                <FieldError>{errors.name?.message}</FieldError>
               </Field>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -109,7 +100,7 @@ export function SignUpForm({
                   placeholder="m@example.com"
                   {...register("email")}
                 />
-                <FieldError message={errors.email?.message} />
+                <FieldError>{errors.email?.message}</FieldError>
               </Field>
               <Field>
                 <FieldLabel htmlFor="password">Password</FieldLabel>
@@ -118,7 +109,7 @@ export function SignUpForm({
                   type="password"
                   {...register("password")}
                 />
-                <FieldError message={errors.password?.message} />
+                <FieldError>{errors.password?.message}</FieldError>
               </Field>
               <Field>
                 <FieldLabel htmlFor="confirmPassword">
@@ -129,15 +120,11 @@ export function SignUpForm({
                   type="password"
                   {...register("confirmPassword")}
                 />
-                <FieldError message={errors.confirmPassword?.message} />
+                <FieldError>{errors.confirmPassword?.message}</FieldError>
               </Field>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Signing Up..." : "Sign Up"}
+                {isSubmitting ? <Spinner /> : "Sign Up"}
               </Button>
-              <ServerResponse
-                message={serverResponse.message}
-                type={serverResponse.type}
-              />
               <span className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link href="/login" className="underline">
@@ -146,6 +133,24 @@ export function SignUpForm({
               </span>
             </FieldGroup>
           </form>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={handleGoogleSignIn}
+          >
+            <Image src="/google.svg" alt="Google" className="size-4" />
+            <span>Sign Up with Google</span>
+          </Button>
         </CardContent>
       </Card>
     </div>

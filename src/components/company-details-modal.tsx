@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { companies, interactions as interactionsTable } from "@/db/schema";
 import { MoreVertical, Send, TagIcon } from "lucide-react";
+import type { User } from "better-auth";
 
 import { deleteCompany, updateCompanyStatus } from "@/app/actions/company";
 import { createInteraction, getInteractions } from "@/app/actions/interaction";
@@ -50,7 +51,6 @@ import { columns } from "./companies-kanban-client";
 
 type Company = typeof companies.$inferSelect;
 type Interaction = typeof interactionsTable.$inferSelect;
-type User = Awaited<ReturnType<typeof getUserData>>;
 
 interface CompanyDetailsModalProps {
   isOpen: boolean;
@@ -74,7 +74,7 @@ export function CompanyDetailsModal({
   const [isLoading, setIsLoading] = useState(true);
   const [newInteractionContent, setNewInteractionContent] =
     useState<CompanyStatus>("lead");
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User>();
 
   useEffect(() => {
     if (isOpen && company) {
@@ -151,7 +151,7 @@ export function CompanyDetailsModal({
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success(result.success);
+      toast.success("Status updated successfully");
       onStatusChange(company.id, newStatus);
     }
   }
@@ -281,7 +281,7 @@ export function CompanyDetailsModal({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isPending}>
-              {isPending ? "Deleting..." : "Continue"}
+              {isPending ? <Spinner /> : "Continue"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

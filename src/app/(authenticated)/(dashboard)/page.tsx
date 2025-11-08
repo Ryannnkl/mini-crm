@@ -1,19 +1,16 @@
-import { cookies } from "next/headers";
 import { getCompaniesForUser } from "@/lib/data";
 import { DashboardClient } from "./dashboard-client";
 import { Metadata } from "next";
+import { getUserData } from "@/app/actions/user";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("session_token")?.value;
+  const user = await getUserData();
 
-  const companiesData = sessionToken
-    ? await getCompaniesForUser(sessionToken)
-    : [];
+  const companiesData = user ? await getCompaniesForUser(user.id) : [];
 
   return <DashboardClient companiesData={companiesData} />;
 }

@@ -1,11 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema, LoginSchemaType } from "@/lib/schemas/login.schema";
-import { signIn } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,41 +21,20 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
+import { Spinner } from "@/components/ui/spinner";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import Image from "next/image";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return <p className="text-sm text-red-500 mt-1">{message}</p>;
 }
 
-function ServerResponse({
-  message,
-  type,
-}: {
-  message?: string;
-  type?: "success" | "error";
-}) {
-  if (!message) return null;
-  const colors = {
-    success: "text-green-500",
-    error: "text-red-500",
-  };
-  return (
-    <p className={`text-sm mt-2 text-center ${type ? colors[type] : ""}`}>
-      {message}
-    </p>
-  );
-}
-
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
-  const [serverResponse, setServerResponse] = useState<{
-    message?: string;
-    type?: "success" | "error";
-  }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -67,24 +45,25 @@ export function LoginForm({
     resolver: zodResolver(LoginSchema),
   });
 
-  const onSubmit = async (data: LoginSchemaType) => {
+  const onSubmit = async (loginSchema: LoginSchemaType) => {
     setIsSubmitting(true);
-    setServerResponse({});
     try {
-      const response = await signIn(data);
-      if (response.error) {
-        setServerResponse({ message: response.error, type: "error" });
-      } else {
-        setServerResponse({ message: response.success, type: "success" });
-        router.push("/");
-      }
-    } catch (error) {
-      setServerResponse({
-        message: "An unexpected error occurred.",
-        type: "error",
+      await authClient.signIn.email({
+        email: loginSchema.email,
+        password: loginSchema.password,
+        callbackURL: "/",
+        rememberMe: true,
       });
+    } catch (error) {
+      toast.error("An unexpected error occurred.");
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+    });
   };
 
   return (
@@ -122,12 +101,8 @@ export function LoginForm({
               </Field>
               <Field>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Logging In..." : "Login"}
+                  {isSubmitting ? <Spinner /> : "Login"}
                 </Button>
-                <ServerResponse
-                  message={serverResponse.message}
-                  type={serverResponse.type}
-                />
                 <FieldDescription className="text-center">
                   Don&apos;t have an account?{" "}
                   <Link href="/sign-up">Sign up</Link>
@@ -135,6 +110,24 @@ export function LoginForm({
               </Field>
             </FieldGroup>
           </form>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            onClick={handleGoogleSignIn}
+          >
+            <Image src="/google.svg" alt="Google" className="size-4" />
+            <span>Login with Google</span>
+          </Button>
         </CardContent>
       </Card>
     </div>

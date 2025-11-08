@@ -1,27 +1,20 @@
 "use server";
 
 import { db } from "@/db";
-import { interactions, session as sessionTable, companies } from "@/db/schema";
+import { interactions, companies } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getUserData } from "./user";
 
 export async function getInteractions(companyId: number) {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session_token")?.value;
-    if (!sessionToken) return { error: "Unauthorized" };
-
-    const [session] = await db
-      .select({ userId: sessionTable.userId })
-      .from(sessionTable)
-      .where(eq(sessionTable.token, sessionToken));
-    if (!session) return { error: "Unauthorized" };
+    const user = await getUserData();
+    if (!user) return { error: "Unauthorized" };
 
     const [company] = await db
       .select({ id: companies.id })
       .from(companies)
-      .where(and(eq(companies.id, companyId), eq(companies.userId, session.userId)));
+      .where(and(eq(companies.id, companyId), eq(companies.userId, user.id)));
 
     if (!company) {
       return { error: "Company not found or permission denied." };
@@ -46,29 +39,23 @@ export async function createInteraction(companyId: number, content: string) {
   }
 
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session_token")?.value;
-    if (!sessionToken) return { error: "Unauthorized" };
-
-    const [session] = await db
-      .select({ userId: sessionTable.userId })
-      .from(sessionTable)
-      .where(eq(sessionTable.token, sessionToken));
-    if (!session) return { error: "Unauthorized" };
+    const user = await getUserData();
+    if (!user) return { error: "Unauthorized" };
 
     const [company] = await db
       .select({ id: companies.id })
       .from(companies)
-      .where(and(eq(companies.id, companyId), eq(companies.userId, session.userId)));
-
-    if (!company) {
-      return { error: "Company not found or permission denied." };
-    }
+      .where(and(eq(companies.id, companyId), eq(companies.userId, user.id)));
+    if (!company) return { error: "Company not found or permission denied." };
 
     const [newInteraction] = await db
       .insert(interactions)
       .values({ companyId, content })
       .returning();
+
+    if (!newInteraction) {
+      return { error: "Interaction not created." };
+    }
 
     revalidatePath("/");
     return { success: "Interaction added!", interaction: newInteraction };
