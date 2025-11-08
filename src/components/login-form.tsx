@@ -125,7 +125,13 @@ export function LoginForm({
             className="w-full flex items-center justify-center gap-2"
             onClick={handleGoogleSignIn}
           >
-            <Image src="/google.svg" alt="Google" className="size-4" />
+            <Image
+              src="/google.svg"
+              alt="Google"
+              className="size-4"
+              width={24}
+              height={24}
+            />
             <span>Login with Google</span>
           </Button>
         </CardContent>

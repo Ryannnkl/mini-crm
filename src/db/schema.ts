@@ -5,6 +5,7 @@ import {
   boolean,
   serial,
   varchar,
+  integer,
 } from "drizzle-orm/pg-core";
 
 /*
@@ -78,6 +79,22 @@ export const companies = pgTable("companies", {
   name: varchar("name", { length: 256 }).notNull(),
   status: text("status", { enum: ["lead", "negotiating", "won", "lost"] })
     .default("lead")
+    .notNull(),
+
+  website: text("website"),
+  phone: varchar("phone", { length: 50 }),
+
+  primaryContactName: text("primary_contact_name"),
+  primaryContactEmail: text("primary_contact_email"),
+
+  // Valor potencial do contrato/venda (em CENTAVOS)
+  potentialValue: integer("potential_value").default(0),
+
+  // De onde veio esse lead?
+  leadSource: text("lead_source", {
+    enum: ["website", "referral", "cold_call", "other"],
+  })
+    .default("other")
     .notNull(),
   userId: text("user_id")
     .notNull()

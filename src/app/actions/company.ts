@@ -2,22 +2,17 @@
 
 import { db } from "@/db";
 import { companies } from "@/db/schema";
-import {
-  CreateCompanySchema,
-  type CreateCompanySchemaType,
+import { CompanyFormSchema } from "@/lib/schemas/company.schema";
+import type {
+  CompanyFormValues,
+  CreateCompanySchemaType,
 } from "@/lib/schemas/company.schema";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getUserData } from "./user";
 
 export async function createCompany(data: CreateCompanySchemaType) {
-  const validationResult = CreateCompanySchema.safeParse(data);
-
-  if (!validationResult.success) {
-    return { error: "Invalid data provided." };
-  }
-
-  const { name } = validationResult.data;
+  const { name } = data;
 
   try {
     const user = await getUserData();
@@ -84,6 +79,48 @@ export async function deleteCompany(companyId: number) {
     return { success: "Company deleted successfully!" };
   } catch (e) {
     console.error("Delete company error:", e);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function updateCompany(
+  companyId: number,
+  data: CompanyFormValues
+) {
+  const validationResult = CompanyFormSchema.safeParse(data);
+
+  if (!validationResult.success) {
+    return { error: "Invalid data provided." };
+  }
+
+  try {
+    const user = await getUserData();
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const { potentialValue, ...rest } = validationResult.data;
+
+    const [updatedCompany] = await db
+      .update(companies)
+      .set({
+        ...rest,
+        potentialValue: Math.round(potentialValue * 100),
+      })
+      .where(and(eq(companies.id, companyId), eq(companies.userId, user.id)))
+      .returning();
+
+    if (!updatedCompany) {
+      return { error: "Company not found or permission denied." };
+    }
+
+    revalidatePath("/");
+    return {
+      success: "Company updated successfully!",
+      company: updatedCompany,
+    };
+  } catch (e) {
+    console.error("Update company error:", e);
     return { error: "An unexpected error occurred." };
   }
 }

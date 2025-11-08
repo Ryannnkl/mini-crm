@@ -5,10 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { companies } from "@/db/schema";
 
-import {
-  CreateCompanySchema,
-  type CreateCompanySchemaType,
-} from "@/lib/schemas/company.schema";
+import { CreateCompanySchema } from "@/lib/schemas/company.schema";
+import type { CreateCompanySchemaType } from "@/lib/schemas/company.schema";
 import { createCompany } from "@/app/actions/company";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +27,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Spinner } from "./ui/spinner";
 
 interface CreateCompanyModalProps {
   isOpen: boolean;
@@ -98,7 +97,7 @@ export function CreateCompanyModal({
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create company"}
+                {isSubmitting ? <Spinner /> : "Create company"}
               </Button>
             </DialogFooter>
           </form>
