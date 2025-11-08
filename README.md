@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aplicação CRM B2B
 
-## Getting Started
+Uma aplicação completa de Gerenciamento de Relacionamento com o Cliente (CRM) projetada para interações Business-to-Business (B2B). Esta aplicação ajuda a gerenciar empresas, contatos e interações de forma eficiente.
 
-First, run the development server:
+## Funcionalidades
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Gerenciamento de Empresas
+- Rastreamento de Interações
+- Autenticação de Usuários
+
+## Tecnologias Utilizadas
+
+- **Framework:** Next.js
+- **Linguagem:** TypeScript
+- **Estilização:** ShadcnUI + Tailwind CSS
+- **ORM de Banco de Dados:** Drizzle ORM
+- **Autenticação:** Better-Auth
+- **Gerenciador de Pacotes:** pnpm
+
+## Como Começar
+
+Siga estes passos para configurar e executar o projeto localmente.
+
+### Pré-requisitos
+
+Certifique-se de ter o seguinte instalado:
+
+- Node.js (versão LTS recomendada)
+- pnpm
+
+### Instalação
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone git@github.com:Ryannnkl/mini-crm.git
+    cd crm
+    ```
+2.  **Instale as dependências:**
+    ```bash
+    pnpm install
+    ```
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env.local` na raiz do projeto e adicione as variáveis de ambiente necessárias. Pode ser necessário consultar o código da aplicação ou perguntar ao mantenedor do projeto quais são as variáveis obrigatórias (ex: strings de conexão com o banco de dados, segredos de autenticação).
+
+Exemplo (as variáveis podem mudar):
+
+```
+DATABASE_URL="postgresql://user:password@host:port/database"
+NEXTAUTH_SECRET="seu_segredo_nextauth"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Configuração do Banco de Dados
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Este projeto usa Drizzle ORM. Você precisará executar as migrações para configurar o schema do seu banco de dados.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1.  **Execute as migrações do Drizzle:**
+    ```bash
+    pnpm drizzle-kit migrate
+    ```
 
-## Learn More
+### Executando o Servidor de Desenvolvimento
 
-To learn more about Next.js, take a look at the following resources:
+Para iniciar o servidor de desenvolvimento:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver o resultado.
 
-## Deploy on Vercel
+## Screenshots
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Login                            | Dashboard                            | Detalhes da Empresa                            |
+| -------------------------------- | ------------------------------------ | ---------------------------------------------- |
+| ![Login](screenshots/image1.png) | ![Dashboard](screenshots/image2.png) | ![Detalhes da Empresa](screenshots/image3.png) |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Saiba Mais
+
+- [Documentação do Next.js](https://nextjs.org/)
+- [Documentação do Drizzle ORM](https://orm.drizzle.team/)
+- [Documentação do Better-Auth](https://www.better-auth.com/)
+- [Documentação do ShadcnUI](https://ui.shadcn.com/)
+- [Documentação do Tailwind CSS](https://tailwindcss.com/)
