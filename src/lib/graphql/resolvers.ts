@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { companies } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { companies, interactions } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import type { User } from "better-auth";
 
 export interface GraphQLContext {
@@ -49,6 +49,22 @@ export const resolvers = {
       return userCompanies;
     },
 
+    interactions: async (
+      _: unknown,
+      { companyId }: { companyId: number },
+      context: GraphQLContext
+    ) => {
+      requireAuth(context);
+
+      const interactionsList = await db
+        .select()
+        .from(interactions)
+        .where(eq(interactions.companyId, companyId))
+        .orderBy(desc(interactions.createdAt));
+
+      return interactionsList;
+    },
+
     company: async (
       _: unknown,
       { id }: { id: number },
@@ -74,6 +90,35 @@ export const resolvers = {
   },
 
   Mutation: {
+    createInteraction: async (
+      _: unknown,
+      { companyId, content }: { companyId: number; content: string },
+      context: GraphQLContext
+    ) => {
+      const user = requireAuth(context);
+      console.log(context);
+
+      // Verify the company exists and belongs to the user
+      const [company] = await db
+        .select()
+        .from(companies)
+        .where(and(eq(companies.id, companyId), eq(companies.userId, user.id)));
+
+      if (!company) {
+        throw new Error("Company not found or access denied");
+      }
+
+      const [newInteraction] = await db
+        .insert(interactions)
+        .values({
+          companyId,
+          content,
+        })
+        .returning();
+
+      return newInteraction;
+    },
+
     createCompany: async (
       _: unknown,
       { input }: { input: CreateCompanyInput },
