@@ -4,7 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 import type { User } from "better-auth";
 
 export interface GraphQLContext {
-  user: User | null;
+  params: Promise<Record<string, string>>;
 }
 
 interface CreateCompanyInput {
@@ -30,10 +30,11 @@ interface UpdateCompanyInput {
 }
 
 function requireAuth(context: GraphQLContext): User {
-  if (!context.user) {
+  const contexto = context as unknown as { user: User };
+  if (!contexto.user) {
     throw new Error("Unauthorized");
   }
-  return context.user;
+  return contexto.user;
 }
 
 export const resolvers = {
@@ -96,9 +97,7 @@ export const resolvers = {
       context: GraphQLContext
     ) => {
       const user = requireAuth(context);
-      console.log(context);
 
-      // Verify the company exists and belongs to the user
       const [company] = await db
         .select()
         .from(companies)

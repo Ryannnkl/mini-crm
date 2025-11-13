@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { eq, and, gte } from "drizzle-orm";
 import { session as sessionTable, user as userTable } from "@/db/schema";
+import type { User } from "better-auth";
 
 const schema = createSchema({
   typeDefs,
@@ -16,7 +17,7 @@ const { handleRequest } = createYoga<GraphQLContext>({
   schema,
   graphqlEndpoint: "/api/graphql",
   fetchAPI: { Response: NextResponse },
-  context: async ({ request }): Promise<GraphQLContext> => {
+  context: async ({ request }): Promise<{ user: User | null }> => {
     try {
       const cookies = request.headers.get("Cookie") || "";
       const sessionToken = cookies?.split("session_token=")[1];
@@ -60,4 +61,8 @@ const { handleRequest } = createYoga<GraphQLContext>({
   },
 });
 
-export { handleRequest as GET, handleRequest as POST };
+export {
+  handleRequest as GET,
+  handleRequest as POST,
+  handleRequest as OPTIONS,
+};
